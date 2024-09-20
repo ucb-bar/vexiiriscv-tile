@@ -135,22 +135,23 @@ class VexiiRiscvTile private(
   override lazy val module = new VexiiRiscvTileModuleImp(this)
 
   val portName = "vexiiriscv-mem-port"
-  val node = TLIdentityNode()
 
-  val dmemNode = TLClientNode(
+  val memNode = TLClientNode(
     Seq(TLMasterPortParameters.v1(
-      clients = Seq(TLMasterParameters.v1(
-        name = portName,
-        sourceId = IdRange(0, 1))))))
-
-  val imemNode = TLClientNode(
-    Seq(TLMasterPortParameters.v1(
-      clients = Seq(TLMasterParameters.v1(
-        name = portName,
-        sourceId = IdRange(0, 1))))))
-
-  tlMasterXbar.node := node := TLBuffer() := dmemNode
-  tlMasterXbar.node := node := TLBuffer() := imemNode
+      clients = Seq(
+        TLMasterParameters.v1(
+          name = portName,
+          sourceId = IdRange(0, 8)
+        ),
+        TLMasterParameters.v1(
+          name = portName,
+          sourceId = IdRange(8, 15),
+          supportsProbe = TransferSizes(p(CacheBlockBytes), p(CacheBlockBytes))
+        )
+      )
+    ))
+  )
+  tlMasterXbar.node := TLBuffer()  := TLWidthWidget(8) := memNode
 
   // Required entry of CPU device in the device tree for interrupt purpose
   val cpuDevice: SimpleDevice = new SimpleDevice("cpu", Seq("spinalhdl,vexiiriscv", "riscv")) {
@@ -168,14 +169,74 @@ class VexiiRiscvTile private(
     Resource(cpuDevice, "reg").bind(ResourceAddress(tileId))
   }
 
-  def connectVexiiRiscvInterrupts(debug: Bool, msip: Bool, mtip: Bool, meip: Bool) = {
-    val (interrupts, _) = intSinkNode.in(0)
-    debug := interrupts(0)
-    msip := interrupts(1)
-    mtip := interrupts(2)
-    meip := interrupts(3)
-  }
+  def interrupts = intSinkNode.in(0)._1
 }
 
 class VexiiRiscvTileModuleImp(outer: VexiiRiscvTile) extends BaseTileModuleImp(outer){
+
+  val (tl, edge) = outer.memNode.out(0)
+
+  val core = Module(new VexiiRiscvTilelink(edge.slave.slaves.map { s =>
+    s.address.map(_.toRanges.map(r =>
+      VexiiRiscvAddressParams(r.base, r.size, s.supportsAcquireB)
+    )).flatten
+  }.flatten))
+
+  core.io.clk := clock
+  core.io.reset := reset.asBool
+
+  core.io.hartId := outer.hartIdSinkNode.bundle
+
+  // debug, msip, mtip, meip
+  val ints = outer.interrupts
+
+  core.io.msi_flag := ints(1)
+  core.io.mti_flag := ints(2)
+  core.io.mei_flag := ints(3)
+  core.io.sei_flag := false.B
+
+
+  tl.a.valid := core.io.mem_node_bus.a.valid
+  core.io.mem_node_bus.a.ready := tl.a.ready
+  tl.a.bits.opcode := core.io.mem_node_bus.a.payload.opcode
+  tl.a.bits.param := core.io.mem_node_bus.a.payload.param
+  tl.a.bits.source := core.io.mem_node_bus.a.payload.source
+  tl.a.bits.address := core.io.mem_node_bus.a.payload.address
+  tl.a.bits.size := core.io.mem_node_bus.a.payload.size
+  tl.a.bits.mask := core.io.mem_node_bus.a.payload.mask
+  tl.a.bits.data := core.io.mem_node_bus.a.payload.data
+  tl.a.bits.corrupt := core.io.mem_node_bus.a.payload.corrupt
+
+  core.io.mem_node_bus.b.valid := tl.b.valid
+  tl.b.ready := core.io.mem_node_bus.b.ready
+  core.io.mem_node_bus.b.payload.opcode := tl.b.bits.opcode
+  core.io.mem_node_bus.b.payload.param := tl.b.bits.param
+  core.io.mem_node_bus.b.payload.source := tl.b.bits.source
+  core.io.mem_node_bus.b.payload.address := tl.b.bits.address
+  core.io.mem_node_bus.b.payload.size := tl.b.bits.size
+
+  tl.c.valid := core.io.mem_node_bus.c.valid
+  core.io.mem_node_bus.c.ready := tl.c.ready
+  tl.c.bits.opcode := core.io.mem_node_bus.c.payload.opcode
+  tl.c.bits.param := core.io.mem_node_bus.c.payload.param
+  tl.c.bits.source := core.io.mem_node_bus.c.payload.source
+  tl.c.bits.address := core.io.mem_node_bus.c.payload.address & ~((p(CacheBlockBytes) - 1).U(64.W))
+  tl.c.bits.size := core.io.mem_node_bus.c.payload.size
+  tl.c.bits.data := core.io.mem_node_bus.c.payload.data
+  tl.c.bits.corrupt := core.io.mem_node_bus.c.payload.corrupt
+
+  core.io.mem_node_bus.d.valid := tl.d.valid
+  tl.d.ready := core.io.mem_node_bus.d.ready
+  core.io.mem_node_bus.d.payload.opcode := tl.d.bits.opcode
+  core.io.mem_node_bus.d.payload.param := tl.d.bits.param
+  core.io.mem_node_bus.d.payload.source := tl.d.bits.source
+  core.io.mem_node_bus.d.payload.size := tl.d.bits.size
+  core.io.mem_node_bus.d.payload.data := tl.d.bits.data
+  core.io.mem_node_bus.d.payload.corrupt := tl.d.bits.corrupt
+  core.io.mem_node_bus.d.payload.denied := tl.d.bits.denied
+  core.io.mem_node_bus.d.payload.sink := tl.d.bits.sink
+
+  tl.e.valid := core.io.mem_node_bus.e.valid
+  core.io.mem_node_bus.e.ready := tl.e.ready
+  tl.e.bits.sink := core.io.mem_node_bus.e.payload.sink
 }

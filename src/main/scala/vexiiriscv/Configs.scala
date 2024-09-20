@@ -30,6 +30,5 @@ class WithNVexiiRiscvCores(n: Int = 1) extends Config((site, here, up) => {
       )
     } ++ prev
   }
-  case SystemBusKey => up(SystemBusKey, site).copy(beatBytes = 4)
   case NumTiles => up(NumTiles) + n
 })
