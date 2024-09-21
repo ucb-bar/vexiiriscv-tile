@@ -51,8 +51,8 @@ class VexiiRiscvTilelink(regions: Seq[VexiiRiscvAddressParams]) extends BlackBox
           val source = UInt(4.W)
           val address = UInt(32.W)
           val size = UInt(3.W)
-          val mask = UInt(8.W)
-          val data = UInt(64.W)
+          val mask = UInt(16.W)
+          val data = UInt(128.W)
           val corrupt = Bool()
         })
       }
@@ -76,7 +76,7 @@ class VexiiRiscvTilelink(regions: Seq[VexiiRiscvAddressParams]) extends BlackBox
           val source = UInt(4.W)
           val address = UInt(32.W)
           val size = UInt(3.W)
-          val data = UInt(64.W)
+          val data = UInt(128.W)
           val corrupt = Bool()
         })
       }
@@ -88,7 +88,7 @@ class VexiiRiscvTilelink(regions: Seq[VexiiRiscvAddressParams]) extends BlackBox
           val param = UInt(3.W)
           val source = UInt(4.W)
           val size = UInt(3.W)
-          val data = UInt(64.W)
+          val data = UInt(128.W)
           val corrupt = Bool()
           val denied = Bool()
           val sink = UInt(4.W)

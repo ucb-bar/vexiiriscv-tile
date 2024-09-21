@@ -151,7 +151,7 @@ class VexiiRiscvTile private(
       )
     ))
   )
-  tlMasterXbar.node := TLBuffer()  := TLWidthWidget(8) := memNode
+  tlMasterXbar.node := TLBuffer()  := TLWidthWidget(16) := memNode
 
   // Required entry of CPU device in the device tree for interrupt purpose
   val cpuDevice: SimpleDevice = new SimpleDevice("cpu", Seq("spinalhdl,vexiiriscv", "riscv")) {
