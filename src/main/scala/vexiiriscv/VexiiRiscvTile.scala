@@ -70,9 +70,9 @@ case class VexiiRiscvCoreParams() extends CoreParams {
   val nPTECacheEntries: Int = 0
   val useHypervisor: Boolean = false
   val useConditionalZero = false
-  val useZba = false
-  val useZbb = false
-  val useZbs = false
+  val useZba = true
+  val useZbb = true
+  val useZbs = true
   override val useVector = false
   override def vLen = 0
   override def eLen = 64

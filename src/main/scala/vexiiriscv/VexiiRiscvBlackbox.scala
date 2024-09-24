@@ -137,6 +137,7 @@ class VexiiRiscvTilelink(regions: Seq[VexiiRiscvAddressParams]) extends BlackBox
     "--with-rvc",
     "--with-rvf",
     "--with-rvd",
+    "--with-rvZb",
     "--with-btb",
     "--with-ras",
     "--with-gshare",
