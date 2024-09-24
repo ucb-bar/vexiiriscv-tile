@@ -148,7 +148,8 @@ class VexiiRiscvTilelink(regions: Seq[VexiiRiscvAddressParams]) extends BlackBox
     "--reset-vector=0x10000",
     "--with-whiteboxer-outputs",
     "--with-boot-mem-init",
-    "--tl-sink-width=4"
+    "--tl-sink-width=4",
+    "--debug-triggers=1"
   ) ++ regions.map(_.str)).mkString(" ")
   println(s"Running VexiiRiscv generator with args: $args")
   val proc = Process(s"sbt \"$args\"", new File(vexiiRiscvDir)).!!

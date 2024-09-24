@@ -60,7 +60,7 @@ case class VexiiRiscvCoreParams() extends CoreParams {
   val useAtomicsOnlyForIO: Boolean = false
   val useBPWatch: Boolean = false
   val useCompressed: Boolean = true
-  val useDebug: Boolean = true
+  val useDebug: Boolean = false
   val useNMI: Boolean = false
   val useRVE: Boolean = false
   val useSCIE: Boolean = false
