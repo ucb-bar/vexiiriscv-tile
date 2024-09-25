@@ -204,6 +204,9 @@ class VexiiRiscvTileModuleImp(outer: VexiiRiscvTile) extends BaseTileModuleImp(o
   tl.a.bits.address := core.io.mem_node_bus.a.payload.address
   tl.a.bits.size := core.io.mem_node_bus.a.payload.size
   tl.a.bits.mask := core.io.mem_node_bus.a.payload.mask
+  when (core.io.mem_node_bus.a.payload.opcode.isOneOf(TLMessages.AcquireBlock, TLMessages. AcquirePerm)) {
+    tl.a.bits.mask := ~(0.U(16.W))
+  }
   tl.a.bits.data := core.io.mem_node_bus.a.payload.data
   tl.a.bits.corrupt := core.io.mem_node_bus.a.payload.corrupt
 
